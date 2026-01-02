@@ -36,7 +36,7 @@ BEGIN
     EXECUTE format('
         SELECT COALESCE(MAX(id), %L)
         FROM %I
-        WHERE id LIKE %L || ''%''
+        WHERE id LIKE %L || ''%%''
     ', date_prefix || '0000', table_name, date_prefix) INTO max_id;
     
     -- Extract sequence number (last 4 digits)
@@ -78,8 +78,9 @@ $$;
 --
 
 CREATE TABLE public.users (
-    id uuid NOT NULL,
+    id text NOT NULL,
     email text NOT NULL,
+    password text NOT NULL,
     role text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -90,7 +91,7 @@ ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
+    ADD CONSTRAINT users_email_key UNIQUE (email);
 
 --
 -- Name: master_produk; Type: TABLE; Schema: public; Owner: -
@@ -365,6 +366,11 @@ CREATE TRIGGER trigger_fix_cost_id
     FOR EACH ROW
     EXECUTE FUNCTION public.trigger_generate_id();
 
+CREATE TRIGGER trigger_users_id
+    BEFORE INSERT ON public.users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.trigger_generate_id();
+
 --
 -- Name: users; Type: ROW SECURITY; Schema: public; Owner: -
 --
@@ -426,84 +432,60 @@ ALTER TABLE public.biaya_operasional ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fix_cost ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
+-- Name: Allow all (RLS disabled - authentication handled in application layer); Type: POLICY; Schema: public; Owner: -
 --
+-- Catatan: RLS tetap enabled untuk keamanan, tapi policies di-set ke allow all
+-- karena authentication sudah di-handle di application layer (middleware & API routes)
 
-CREATE POLICY "Allow all for authenticated users" ON public.users
+CREATE POLICY "Allow all" ON public.users
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
---
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Allow all for authenticated users" ON public.master_produk
+CREATE POLICY "Allow all" ON public.master_produk
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
---
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Allow all for authenticated users" ON public.database_klien
+CREATE POLICY "Allow all" ON public.database_klien
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
---
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Allow all for authenticated users" ON public.transaksi_penjualan
+CREATE POLICY "Allow all" ON public.transaksi_penjualan
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
---
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Allow all for authenticated users" ON public.master_tugas
+CREATE POLICY "Allow all" ON public.master_tugas
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
---
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Allow all for authenticated users" ON public.master_karyawan
+CREATE POLICY "Allow all" ON public.master_karyawan
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
---
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Allow all for authenticated users" ON public.log_tugas
+CREATE POLICY "Allow all" ON public.log_tugas
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
---
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Allow all for authenticated users" ON public.penggajian
+CREATE POLICY "Allow all" ON public.penggajian
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
---
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Allow all for authenticated users" ON public.biaya_operasional
+CREATE POLICY "Allow all" ON public.biaya_operasional
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
---
--- Name: Allow all for authenticated users; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Allow all for authenticated users" ON public.fix_cost
+CREATE POLICY "Allow all" ON public.fix_cost
     FOR ALL
-    USING ((auth.role() = 'authenticated'::text));
+    USING (true)
+    WITH CHECK (true);
 
 --
 -- PostgreSQL database dump complete

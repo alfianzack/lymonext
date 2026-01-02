@@ -21,6 +21,7 @@ Aplikasi keuangan berbasis Next.js untuk studio foto yang terintegrasi dengan Su
 - **Next.js 14** - Framework React dengan App Router
 - **TypeScript** - Type safety
 - **Supabase** - Database & Authentication
+- **PostgreSQL (pg)** - Koneksi langsung ke database menggunakan connection string
 - **Tailwind CSS** - Styling
 - **Vercel** - Deployment platform
 
@@ -39,9 +40,27 @@ npm install
 3. Buat file `.env.local` di root project:
 
 ```env
+# Mode Database: 'supabase' untuk REST API, 'local' untuk PostgreSQL direct
+# Default: 'supabase'
+DATABASE_MODE=supabase
+
+# Supabase Client (untuk authentication dan real-time)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# PostgreSQL Connection String (untuk koneksi langsung ke database)
+# Untuk Supabase: Dapatkan dari Dashboard → Settings → Database → Connection string → Connection pooling
+# Untuk Local: postgresql://postgres:password@localhost:5432/your_database
+DATABASE_URL=postgresql://postgres.xxxxx:[YOUR-PASSWORD]@aws-0-[region].pooler.supabase.com:6543/postgres
+
+# JWT Secret Key (untuk authentication)
+JWT_SECRET=your-secret-key-change-in-production
 ```
+
+**Catatan**: 
+- Ganti `[YOUR-PASSWORD]` dengan password database Anda
+- Set `DATABASE_MODE=local` untuk menggunakan PostgreSQL lokal
+- Set `DATABASE_MODE=supabase` untuk menggunakan Supabase REST API (default)
 
 ### 3. Setup Database
 
@@ -62,6 +81,7 @@ Buka [http://localhost:3000](http://localhost:3000) di browser.
 3. Tambahkan environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `DATABASE_URL` (connection string PostgreSQL)
 4. Deploy!
 
 ## Struktur Database
@@ -84,9 +104,37 @@ Aplikasi menggunakan tabel-tabel berikut:
 - **Admin**: Input transaksi, log tugas, biaya operasional
 - **Owner**: Semua akses termasuk approve, payroll, laporan, dashboard
 
+## Koneksi Database
+
+Aplikasi ini menggunakan dua metode koneksi ke Supabase:
+
+1. **Supabase Client SDK** (`lib/supabase/`) - Untuk authentication dan real-time features
+2. **PostgreSQL Direct Connection** (`lib/db/postgres.ts`) - Untuk query SQL langsung menggunakan connection string
+
+### Menggunakan PostgreSQL Direct Connection
+
+```typescript
+import { query, transaction } from '@/lib/db/postgres'
+
+// Query sederhana
+const result = await query('SELECT * FROM users LIMIT 10')
+
+// Query dengan parameter
+const user = await query('SELECT * FROM users WHERE id = $1', [userId])
+
+// Transaction
+await transaction(async (client) => {
+  await client.query('INSERT INTO ...')
+  await client.query('UPDATE ...')
+})
+```
+
+Lihat file `lib/db/example.ts` untuk contoh penggunaan lebih lengkap.
+
 ## Catatan
 
 - Aplikasi ini stateless, session disimpan di Supabase
 - Tidak ada upload image
 - Semua data disimpan di Supabase database
+- Connection string PostgreSQL harus disimpan di environment variable `DATABASE_URL`
 

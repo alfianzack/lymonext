@@ -1,24 +1,30 @@
-import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
 import { UserRole } from '@/lib/types/database'
 
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+)
+
 export async function getCurrentUser() {
-  const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  
-  if (error || !user) {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('auth-token')?.value
+
+    if (!token) {
+      return null
+    }
+
+    // Verify JWT token
+    const { payload } = await jwtVerify(token, JWT_SECRET)
+
+    return {
+      id: payload.id as string,
+      email: payload.email as string,
+      role: (payload.role as UserRole) || 'admin',
+    }
+  } catch (error) {
     return null
-  }
-
-  // Get user role from user metadata or separate table
-  const { data: userData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  return {
-    ...user,
-    role: (userData?.role as UserRole) || 'admin',
   }
 }
 

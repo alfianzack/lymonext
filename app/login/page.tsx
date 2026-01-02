@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 
@@ -12,7 +11,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,17 +18,23 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       })
 
-      if (error) throw error
+      const data = await response.json()
 
-      if (data.user) {
-        router.push('/dashboard')
-        router.refresh()
+      if (!response.ok) {
+        throw new Error(data.error || 'Terjadi kesalahan saat login')
       }
+
+      // Redirect ke dashboard setelah login berhasil
+      router.push('/dashboard')
+      router.refresh()
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan saat login')
     } finally {
