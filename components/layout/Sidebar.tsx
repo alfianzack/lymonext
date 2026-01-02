@@ -22,6 +22,15 @@ interface SidebarProps {
   userRole: 'admin' | 'owner'
 }
 
+type UserRole = 'admin' | 'owner'
+
+interface MenuItem {
+  title: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  roles: readonly UserRole[]
+}
+
 export default function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
@@ -32,7 +41,7 @@ export default function Sidebar({ userRole }: SidebarProps) {
     router.refresh()
   }
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     {
       title: 'Dashboard',
       href: '/dashboard',
@@ -102,7 +111,7 @@ export default function Sidebar({ userRole }: SidebarProps) {
   ]
 
   const filteredMenuItems = menuItems.filter(item => 
-    item.roles.includes(userRole)
+    (item.roles as readonly string[]).includes(userRole)
   )
 
   return (

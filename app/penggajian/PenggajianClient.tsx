@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -17,11 +17,7 @@ export default function PenggajianClient() {
   )
   const supabase = createClient()
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [penggajianRes, karyawanRes] = await Promise.all([
         supabase.from('penggajian').select('*').order('periode', { ascending: false }),
@@ -39,7 +35,11 @@ export default function PenggajianClient() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const generatePayroll = async () => {
     if (!confirm(`Generate payroll untuk periode ${selectedPeriod}?`)) return
@@ -170,7 +170,7 @@ export default function PenggajianClient() {
               {currentPeriodPayroll.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-gray-500">
-                    Belum ada data payroll untuk periode ini. Klik "Generate Payroll" untuk membuat.
+                    Belum ada data payroll untuk periode ini. Klik &quot;Generate Payroll&quot; untuk membuat.
                   </td>
                 </tr>
               ) : (
