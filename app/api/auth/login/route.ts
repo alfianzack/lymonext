@@ -75,8 +75,22 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error: any) {
     console.error('Login error:', error)
+    
+    // Berikan pesan error yang lebih spesifik
+    let errorMessage = 'Terjadi kesalahan saat login'
+    
+    if (error.message?.includes('Tenant or user not found')) {
+      errorMessage = 'Koneksi database gagal. Pastikan DATABASE_URL sudah di-set dengan benar di Vercel.'
+    } else if (error.message?.includes('password authentication failed')) {
+      errorMessage = 'Kredensial database salah. Periksa password di connection string.'
+    } else if (error.message?.includes('timeout')) {
+      errorMessage = 'Koneksi database timeout. Periksa koneksi internet atau connection string.'
+    } else if (error.message) {
+      errorMessage = `Database error: ${error.message}`
+    }
+    
     return NextResponse.json(
-      { error: 'Terjadi kesalahan saat login' },
+      { error: errorMessage },
       { status: 500 }
     )
   }
